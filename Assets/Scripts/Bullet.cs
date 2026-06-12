@@ -13,6 +13,9 @@ public class Bullet : NetworkBehaviour
     void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
+        // 高速子弹需要连续碰撞检测，防止隧穿
+        if (_rb != null)
+            _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
     }
 
     public override void OnStartServer()

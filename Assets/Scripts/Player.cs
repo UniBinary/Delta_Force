@@ -43,19 +43,16 @@ public class Player : NetworkBehaviour
     {
         base.OnStartClient();
 
-        // 递归查找子物体中的 HealthBarFill
-        Image[] allImages = GetComponentsInChildren<Image>(true);
-        foreach (Image img in allImages)
+        // 从场景 Canvas 中全局查找 HealthBarFill（不在玩家子物体中）
+        if (isLocalPlayer)
         {
-            if (img.name == "HealthBarFill")
+            GameObject go = GameObject.Find("HealthBarFill");
+            if (go != null)
             {
-                _healthBarFill = img;
-                break;
+                _healthBarFill = go.GetComponent<Image>();
+                UpdateHealthBar(health);
             }
         }
-        
-        // 初次显示血量
-        UpdateHealthBar(health);
     }
 
     void Update()
