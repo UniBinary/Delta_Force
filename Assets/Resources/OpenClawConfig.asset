@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2, type: 3}
+  m_Name: OpenClawConfig
+  m_EditorClassIdentifier: 
+  gatewayUrl: http://localhost:18789
+  apiToken: 
+  autoConnect: 1
+  showStatusOverlay: 1
+  requestTimeout: 30
+  heartbeatInterval: 30
+  captureConsoleLogs: 1
+  maxLogEntries: 1000
+  minLogLevel: 1
+  enableMCPBridge: 0
+  mcpBridgePort: 27182
+  allowCodeExecution: 1
+  allowFileAccess: 1
+  allowSceneModification: 1
