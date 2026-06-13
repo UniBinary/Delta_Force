@@ -8,8 +8,8 @@ public enum ItemType
     Helmet,     // 仅头盔栏
     Armor,      // 仅护甲栏
     Weapon,     // 仅枪械栏
-    Consumable, // 医疗包/弹药等，仅胸挂/背包
-    Item        // 变卖物，仅胸挂/背包，无使用效果
+    Ammo,       // 弹药，仅胸挂/背包
+    Item        // 变卖物，仅背包，无使用效果
 }
 
 /// <summary>
@@ -24,10 +24,11 @@ public class ItemData : ScriptableObject
     public Sprite icon;
 
     [Header("装备属性")]
-    public int armorValue;      // 护甲值加成
-    public int damageBonus;     // 伤害加成
+    public int protectionLevel;     // 护甲防护等级 (1-6)
+    public int penetrationLevel;    // 子弹穿透等级 (1-6)，仅 Ammo 类型有效
+    public int damageBonus;         // 伤害加成
 
-    [Header("消耗品")]
-    public int healAmount;      // 治疗量（>0 表示可回血）
-    public int ammoAmount;      // 补充弹药量（>0 表示可补弹药）
+    [Header("消耗品/弹药")]
+    public int healAmount;          // 治疗量（>0 表示可回血）
+    public int ammoAmount;          // 补充弹药量（>0 表示可补弹药）
 }

@@ -6,6 +6,8 @@ public class Bullet : NetworkBehaviour
     public float lifetime = 3f;
     [Header("伤害值")]
     public int damage = 20;
+    [Header("穿透等级 (1-6，越高越强)")]
+    public int penetrationLevel = 1;
 
     private Rigidbody2D _rb;
     private int _frameCount;
@@ -49,8 +51,8 @@ public class Bullet : NetworkBehaviour
         Player player = other.GetComponentInParent<Player>();
         if (player != null)
         {
-            Debug.Log($"[Bullet] 命中玩家，扣血 {damage}");
-            player.TakeDamage(damage);
+            Debug.Log($"[Bullet] 命中玩家，穿透={penetrationLevel}，基础伤害={damage}");
+            player.TakeDamage(damage, penetrationLevel);
         }
         else
         {

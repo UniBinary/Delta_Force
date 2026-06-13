@@ -220,8 +220,8 @@ public class Inventory : NetworkBehaviour
                 }
                 return false;
 
-            case ItemType.Consumable:
-                // 消耗品（药品/弹药）：先胸挂，后背包
+            case ItemType.Ammo:
+                // 弹药：先胸挂，后背包
                 for (int i = 0; i < 5; i++)
                     if (_data.chestRigItemIds[i] < 0) { _data.chestRigItemIds[i] = itemId; Sync(); return true; }
                 for (int i = 0; i < 5; i++)
@@ -332,7 +332,7 @@ public class Inventory : NetworkBehaviour
             case EquipmentSlotType.Armor:    return itemType == ItemType.Armor;
             case EquipmentSlotType.Weapon:   return itemType == ItemType.Weapon;
             case EquipmentSlotType.ChestRig:
-            case EquipmentSlotType.Backpack: return itemType == ItemType.Consumable || itemType == ItemType.Item;
+            case EquipmentSlotType.Backpack: return itemType == ItemType.Ammo || itemType == ItemType.Item;
         }
         return false;
     }
@@ -378,6 +378,9 @@ public class Inventory : NetworkBehaviour
         _syncedInventoryJson = json;
         // Host 模式下服务端直接修改 SyncVar 不会触发 hook，手动调用
         OnInventorySync("", json);
+
+        // 服务端更新护甲等级
+        RefreshArmorProtection();
     }
 
     #endregion
@@ -402,6 +405,28 @@ public class Inventory : NetworkBehaviour
         {
             _ui.SetInventory(this);
             Debug.Log($"[InventoryUI] SetInventory 调用完毕");
+        }
+
+        // 客户端同步护甲等级
+        RefreshArmorProtection();
+    }
+
+    /// <summary>
+    /// 根据当前装备的护甲，更新 Player 上的 armorProtectionLevel
+    /// </summary>
+    void RefreshArmorProtection()
+    {
+        Player p = GetComponent<Player>();
+        if (p == null) return;
+
+        ItemData armor = GetItemData(_data.armorItemId);
+        if (armor != null && armor.itemType == ItemType.Armor && p.armorDurability > 0)
+        {
+            p.armorProtectionLevel = armor.protectionLevel;
+        }
+        else
+        {
+            p.armorProtectionLevel = 0;
         }
     }
 

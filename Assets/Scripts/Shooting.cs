@@ -182,6 +182,10 @@ public class Shooting : NetworkBehaviour
 
         var w = weapons[idx];
         GameObject bullet = Instantiate(w.bulletPrefab, firePoint.position, firePoint.rotation);
+        // 设置子弹穿透等级
+        Bullet bulletComp = bullet.GetComponent<Bullet>();
+        if (bulletComp != null)
+            bulletComp.penetrationLevel = w.penetrationLevel;
         Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
         rb.AddForce(firePoint.up * w.bulletForce, ForceMode2D.Impulse);
         NetworkServer.Spawn(bullet);

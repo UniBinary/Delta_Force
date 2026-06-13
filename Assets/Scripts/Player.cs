@@ -16,8 +16,17 @@ public class Player : NetworkBehaviour
 
     public const int MaxHealth = 100;
 
+    [SyncVar(hook = nameof(OnArmorDurabilityChanged))]
+    public int armorDurability = 100;
+
+    public const int MaxArmorDurability = 100;
+
     // 运行时查找血条（避免 prefab 里拖引用）
     private Image _healthBarFill;
+    private Image _armorDurabilityFill;
+
+    // 缓存的护甲等级（由 Inventory 在装备变更时设置）
+    [HideInInspector] public int armorProtectionLevel = 0;
 
     void Awake()
     {
@@ -52,6 +61,12 @@ public class Player : NetworkBehaviour
                 _healthBarFill = go.GetComponent<Image>();
                 UpdateHealthBar(health);
             }
+            go = GameObject.Find("ArmorDuraTab");
+            if (go != null)
+            {
+                _armorDurabilityFill = go.GetComponent<Image>();
+                UpdateArmorDurabilityBar(armorDurability);
+            }
         }
     }
 
@@ -82,13 +97,64 @@ public class Player : NetworkBehaviour
     }
 
     [Server]
-    public void TakeDamage(int amount)
+    public void TakeDamage(int amount, int bulletPenetration)
     {
         if (health <= 0) return;
 
+        // 子弹穿透等级 vs 护甲防护等级 对比
+        int diff = bulletPenetration - armorProtectionLevel;
+        int finalDamage;
+        int armorConsume;
+
+        switch (diff)
+        {
+            case >= 2:  // 完全穿透
+                finalDamage = 35;
+                armorConsume = 35;
+                break;
+            case 1:     // 穿透
+                finalDamage = 25;
+                armorConsume = 25;
+                break;
+            case 0:     // 半穿透
+                finalDamage = 20;
+                armorConsume = 20;
+                break;
+            case -1:    // 不穿透
+                finalDamage = 15;
+                armorConsume = 15;
+                break;
+            case <= -2: // 钝伤
+                finalDamage = 10;
+                armorConsume = 10;
+                break;
+            default:
+                finalDamage = 20;
+                armorConsume = 20;
+                break;
+        }
+
+        Debug.Log($"[Player] 受击: 子弹穿透={bulletPenetration} 护甲等级={armorProtectionLevel} diff={diff} 伤害={finalDamage} 护甲损耗={armorConsume}");
+
+        // 护甲耐久扣除
+        if (armorDurability > 0 && armorProtectionLevel > 0)
+        {
+            int oldArmor = armorDurability;
+            armorDurability = Mathf.Max(0, armorDurability - armorConsume);
+            // Host 模式下 SyncVar hook 不触发，手动刷新 UI
+            OnArmorDurabilityChanged(oldArmor, armorDurability);
+
+            // 护甲耐久归零时，护甲等级失效
+            if (armorDurability <= 0)
+            {
+                Debug.Log("[Player] 护甲耐久归零！");
+                armorProtectionLevel = 0;
+            }
+        }
+
+        // 扣血
         int oldHealth = health;
-        health = Mathf.Max(0, health - amount);
-        // Host 模式下 SyncVar hook 不触发，手动刷新 UI
+        health = Mathf.Max(0, health - finalDamage);
         OnHealthChanged(oldHealth, health);
 
         if (health <= 0)
@@ -102,8 +168,11 @@ public class Player : NetworkBehaviour
     {
         int oldHealth = health;
         health = MaxHealth;
+        int oldArmor = armorDurability;
+        armorDurability = MaxArmorDurability;
         // Host 模式下 SyncVar hook 不触发，手动刷新 UI
         OnHealthChanged(oldHealth, health);
+        OnArmorDurabilityChanged(oldArmor, armorDurability);
     }
 
     void OnHealthChanged(int oldVal, int newVal)
@@ -115,5 +184,16 @@ public class Player : NetworkBehaviour
     {
         if (_healthBarFill != null)
             _healthBarFill.fillAmount = (float)value / MaxHealth;
+    }
+
+    void OnArmorDurabilityChanged(int oldVal, int newVal)
+    {
+        UpdateArmorDurabilityBar(newVal);
+    }
+
+    void UpdateArmorDurabilityBar(int value)
+    {
+        if (_armorDurabilityFill != null)
+            _armorDurabilityFill.fillAmount = (float)value / MaxArmorDurability;
     }
 }

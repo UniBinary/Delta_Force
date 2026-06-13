@@ -13,6 +13,7 @@ public class WeaponData
     [Header("子弹参数")]
     public int maxMagazineAmmo = 30;       // 弹匣容量
     public int totalReserveAmmo = 180;     // 总备弹量
+    public int penetrationLevel = 1;       // 子弹穿透等级 (1-6)
 
     [Header("射击参数")]
     public float fireRate = 0.1f;          // 射速（秒）
