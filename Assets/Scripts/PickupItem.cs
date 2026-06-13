@@ -4,6 +4,7 @@ using UnityEngine;
 /// <summary>
 /// 地面上的可捡拾物品。挂在物品预制体上。
 /// 需要在 NetworkManager 中注册 spawnable prefab。
+/// 拾取方式：靠近后按 F 键（由 Inventory.TryPickup 处理）。
 /// </summary>
 public class PickupItem : NetworkBehaviour
 {
@@ -12,7 +13,6 @@ public class PickupItem : NetworkBehaviour
     public SpriteRenderer sr;
     public float bobSpeed = 1f;
     public float bobAmount = 0.2f;
-    public float clickPickupRange = 3f; // 点击拾取的最大距离
 
     private float _startY;
 
@@ -41,20 +41,6 @@ public class PickupItem : NetworkBehaviour
                 transform.position.z
             );
         }
-    }
-
-    void OnMouseDown()
-    {
-        if (NetworkClient.localPlayer == null) return;
-
-        // 距离检查
-        Vector3 playerPos = NetworkClient.localPlayer.transform.position;
-        float dist = Vector3.Distance(playerPos, transform.position);
-        if (dist > clickPickupRange) return;
-
-        Inventory inv = NetworkClient.localPlayer.GetComponent<Inventory>();
-        if (inv != null)
-            inv.CmdPickupItem(netId);
     }
 
     /// <summary>

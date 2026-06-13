@@ -178,6 +178,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -186,6 +187,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &105563317
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -506,8 +508,8 @@ GameObject:
   m_Component:
   - component: {fileID: 285461957}
   - component: {fileID: 285461956}
-  - component: {fileID: 285461955}
   - component: {fileID: 285461954}
+  - component: {fileID: 285461958}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: NetworkManager
@@ -545,20 +547,6 @@ MonoBehaviour:
   debugLog: 0
   statisticsGUI: 0
   statisticsLog: 0
---- !u!114 &285461955
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 285461953}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6442dc8070ceb41f094e44de0bf87274, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offsetX: 0
-  offsetY: 0
 --- !u!114 &285461956
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -621,6 +609,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &285461958
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 285461953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6442dc8070ceb41f094e44de0bf87274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  offsetX: 0
+  offsetY: 0
 --- !u!1 &290181334
 GameObject:
   m_ObjectHideFlags: 0
@@ -675,6 +677,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -683,6 +686,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &290181337
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -896,6 +900,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -904,6 +909,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &424380988
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -996,6 +1002,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -1004,6 +1011,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &588077571
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1172,6 +1180,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -1180,6 +1189,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &731096851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1272,6 +1282,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -1280,6 +1291,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &794170666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1372,6 +1384,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -1380,6 +1393,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &836286084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1608,6 +1622,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -1616,6 +1631,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &972589789
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1746,6 +1762,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -1754,6 +1771,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &1274298911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1951,6 +1969,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -1959,6 +1978,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &1419025031
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2256,6 +2276,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -2264,6 +2285,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &1715640218
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2429,6 +2451,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -2437,6 +2460,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &1834173871
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2529,6 +2553,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -2537,6 +2562,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &1875346120
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2629,6 +2655,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   background: {fileID: 0}
   slotLabel: {fileID: 0}
+  durabilityText: {fileID: 0}
   helmetColor: {r: 0.35, g: 0.35, b: 0.6, a: 0.7}
   armorColor: {r: 0.55, g: 0.3, b: 0.3, a: 0.7}
   weaponColor: {r: 0.6, g: 0.5, b: 0.15, a: 0.7}
@@ -2637,6 +2664,7 @@ MonoBehaviour:
   slotType: 0
   slotIndex: 0
   itemId: -1
+  durability: 0
 --- !u!114 &1996103766
 MonoBehaviour:
   m_ObjectHideFlags: 0

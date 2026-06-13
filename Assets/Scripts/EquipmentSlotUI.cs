@@ -10,12 +10,13 @@ using TMPro;
 public class EquipmentSlotUI :
     MonoBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler,
-    IPointerClickHandler
+    IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("UI 引用")]
     public Image icon;          // 可选，兼容旧配置
     public Image background;
     public TextMeshProUGUI slotLabel;
+    public TextMeshProUGUI durabilityText;  // 治疗物耐久度显示
 
     [Header("槽位颜色")]
     public Color helmetColor  = new Color(0.35f, 0.35f, 0.60f, 0.7f);
@@ -27,6 +28,7 @@ public class EquipmentSlotUI :
     [HideInInspector] public EquipmentSlotType slotType;
     [HideInInspector] public int slotIndex;
     [HideInInspector] public int itemId = -1;
+    [HideInInspector] public int durability = 0;  // 治疗物当前耐久
 
     private InventoryUI _ui;
     private Color _emptyColor;
@@ -80,9 +82,10 @@ public class EquipmentSlotUI :
         }
     }
 
-    public void SetItem(ItemData item, int id)
+    public void SetItem(ItemData item, int id, int dur = 0)
     {
         itemId = id;
+        durability = dur;
         Sprite sprite = (item != null) ? item.icon : null;
 
         // 优先用 icon（独立的图标 Image），没有就用 background 的 Sprite
@@ -105,6 +108,15 @@ public class EquipmentSlotUI :
                 background.sprite = null;
                 UpdateEmptyColor();
             }
+        }
+
+        // 治疗物显示耐久度
+        if (durabilityText != null)
+        {
+            bool isMedKit = item != null && item.itemType == ItemType.MedKit;
+            durabilityText.gameObject.SetActive(isMedKit);
+            if (isMedKit)
+                durabilityText.text = dur.ToString();
         }
     }
 
@@ -145,6 +157,19 @@ public class EquipmentSlotUI :
             _ui?.OnSlotRightClick(slotType, slotIndex);
         else if (e.button == PointerEventData.InputButton.Left)
             _ui?.OnSlotLeftClick(slotType, slotIndex);
+    }
+
+    // ---- 悬停（用于 Q 键丢弃） ----
+
+    public void OnPointerEnter(PointerEventData e)
+    {
+        if (itemId >= 0)
+            _ui?.OnSlotHoverEnter(this);
+    }
+
+    public void OnPointerExit(PointerEventData e)
+    {
+        _ui?.OnSlotHoverExit(this);
     }
 
 }

@@ -1,0 +1,40 @@
+using Mirror;
+using UnityEngine;
+
+/// <summary>
+/// GameMap 场景加载后，根据 MainMenu 设置的 NetworkConfig 自动启动网络。
+/// </summary>
+public class GameMapAutoStart : MonoBehaviour
+{
+    void Start()
+    {
+        // 确保只在 GameMap 场景执行
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "GameMap")
+            return;
+
+        NetworkManager nm = FindObjectOfType<NetworkManager>();
+        if (nm == null)
+        {
+            Debug.LogError("[GameMapAutoStart] 未找到 NetworkManager！");
+            return;
+        }
+
+        if (nm.mode != NetworkManagerMode.Offline)
+        {
+            Debug.Log("[GameMapAutoStart] NetworkManager 已在运行，跳过自动启动");
+            return;
+        }
+
+        if (NetworkConfig.IsHost)
+        {
+            nm.StartHost();
+            Debug.Log("[GameMapAutoStart] 已 Host 模式启动");
+        }
+        else
+        {
+            nm.networkAddress = NetworkConfig.ServerIP;
+            nm.StartClient();
+            Debug.Log($"[GameMapAutoStart] 已 Client 模式启动，连接 {NetworkConfig.ServerIP}");
+        }
+    }
+}

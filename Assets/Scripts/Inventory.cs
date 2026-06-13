@@ -26,6 +26,10 @@ public class InventoryData
     public int[] weaponItemIds = new int[2] { -1, -1 };
     public int[] chestRigItemIds = new int[5] { -1, -1, -1, -1, -1 };
     public int[] backpackItemIds = new int[5] { -1, -1, -1, -1, -1 };
+
+    // 治疗物耐久度（仅 MedKit 类型使用，索引对应槽位数组）
+    public int[] chestRigDurabilities = new int[5];
+    public int[] backpackDurabilities = new int[5];
 }
 
 /// <summary>
@@ -40,6 +44,9 @@ public class Inventory : NetworkBehaviour
     [Header("地面物品检测")]
     public float pickupRadius = 2f;
     public LayerMask pickupLayer = -1;
+
+    [Header("丢弃物品")]
+    public GameObject pickupPrefab;
 
     // 服务端数据
     private InventoryData _data = new InventoryData();
@@ -233,6 +240,30 @@ public class Inventory : NetworkBehaviour
                 for (int i = 0; i < 5; i++)
                     if (_data.backpackItemIds[i] < 0) { _data.backpackItemIds[i] = itemId; Sync(); return true; }
                 return false;
+
+            case ItemType.MedKit:
+                // 治疗物：先胸挂，后背包。配耐久度
+                for (int i = 0; i < 5; i++)
+                {
+                    if (_data.chestRigItemIds[i] < 0)
+                    {
+                        _data.chestRigItemIds[i] = itemId;
+                        _data.chestRigDurabilities[i] = item.maxDurability;
+                        Sync();
+                        return true;
+                    }
+                }
+                for (int i = 0; i < 5; i++)
+                {
+                    if (_data.backpackItemIds[i] < 0)
+                    {
+                        _data.backpackItemIds[i] = itemId;
+                        _data.backpackDurabilities[i] = item.maxDurability;
+                        Sync();
+                        return true;
+                    }
+                }
+                return false;
         }
         return false;
     }
@@ -276,8 +307,16 @@ public class Inventory : NetworkBehaviour
         if (idA >= 0 && !CanPlaceInSlot(_itemLookup[idA].itemType, typeB)) return;
         if (idB >= 0 && !CanPlaceInSlot(_itemLookup[idB].itemType, typeA)) return;
 
+        // 交换物品
         SetSlot(typeA, idxA, idB);
         SetSlot(typeB, idxB, idA);
+
+        // 交换耐久度（仅 MedKit 类型有意义）
+        int durA = GetDurability(typeA, idxA);
+        int durB = GetDurability(typeB, idxB);
+        SetDurability(typeA, idxA, durB);
+        SetDurability(typeB, idxB, durA);
+
         Sync();
     }
 
@@ -290,26 +329,52 @@ public class Inventory : NetworkBehaviour
         ItemData item = _itemLookup[itemId];
         bool consumed = false;
 
-        // 治疗
-        if (item.healAmount > 0)
+        switch (item.itemType)
         {
-            Player p = GetComponent<Player>();
-            if (p != null && p.health < Player.MaxHealth)
-            {
-                p.health = Mathf.Min(Player.MaxHealth, p.health + item.healAmount);
-                consumed = true;
-            }
-        }
+            case ItemType.Ammo:
+                // 补充弹药：右键消耗整格
+                if (item.ammoAmount > 0)
+                {
+                    Shooting s = GetComponent<Shooting>();
+                    if (s != null)
+                    {
+                        s.AddAmmo(item.ammoAmount);
+                        consumed = true;
+                    }
+                }
+                break;
 
-        // 补充弹药
-        if (item.ammoAmount > 0)
-        {
-            Shooting s = GetComponent<Shooting>();
-            if (s != null)
-            {
-                s.AddAmmo(item.ammoAmount);
-                consumed = true;
-            }
+            case ItemType.MedKit:
+                // 治疗物：每次右键消耗1点耐久，恢复 healAmount 血量
+                Player p = GetComponent<Player>();
+                if (p != null && p.health < Player.MaxHealth)
+                {
+                    int dur = GetDurability(slotType, slotIndex);
+                    if (dur > 0)
+                    {
+                        p.health = Mathf.Min(Player.MaxHealth, p.health + item.healAmount);
+                        dur--;
+                        SetDurability(slotType, slotIndex, dur);
+                        if (dur <= 0)
+                            consumed = true; // 耐久归零，删除物品
+                        Sync();
+                    }
+                    return; // 已手动 Sync，跳过下面的 consumed 逻辑
+                }
+                return;
+
+            default:
+                // 旧逻辑：healAmount>0 直接回血并消耗（向后兼容）
+                if (item.healAmount > 0)
+                {
+                    Player pp = GetComponent<Player>();
+                    if (pp != null && pp.health < Player.MaxHealth)
+                    {
+                        pp.health = Mathf.Min(Player.MaxHealth, pp.health + item.healAmount);
+                        consumed = true;
+                    }
+                }
+                break;
         }
 
         // 消耗后移除
@@ -317,6 +382,53 @@ public class Inventory : NetworkBehaviour
         {
             SetSlot(slotType, slotIndex, -1);
             Sync();
+        }
+    }
+
+    [Command]
+    public void CmdDropItem(EquipmentSlotType slotType, int slotIndex)
+    {
+        int itemId = GetSlot(slotType, slotIndex);
+        if (itemId < 0 || !_itemLookup.ContainsKey(itemId)) return;
+
+        ItemData item = _itemLookup[itemId];
+        int dur = GetDurability(slotType, slotIndex);
+
+        // 从背包移除
+        SetSlot(slotType, slotIndex, -1);
+        SetDurability(slotType, slotIndex, 0);
+        Sync();
+
+        // 在地面生成物品
+        Vector3 dropPos = transform.position + (Vector3)UnityEngine.Random.insideUnitCircle * 1.5f;
+
+        if (pickupPrefab != null)
+        {
+            GameObject go = Instantiate(pickupPrefab, dropPos, Quaternion.identity);
+            PickupItem pickup = go.GetComponent<PickupItem>();
+            if (pickup != null)
+            {
+                pickup.itemId = itemId;
+                if (item.icon != null)
+                    pickup.SetItem(itemId, item.icon);
+            }
+            NetworkServer.Spawn(go);
+        }
+        else
+        {
+            // 如果没有指定 prefab，尝试用 Resources 或直接创建
+            Debug.LogWarning("[Inventory] pickupPrefab 未设置，无法在地面生成物品。使用以下代码在新 GameObject 上添加 PickupItem：");
+            GameObject go = new GameObject($"Pickup_{item.itemName}");
+            go.transform.position = dropPos;
+            SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = item.icon;
+            sr.sortingOrder = 1;
+            CircleCollider2D col = go.AddComponent<CircleCollider2D>();
+            col.radius = 0.5f;
+            PickupItem pickup = go.AddComponent<PickupItem>();
+            pickup.itemId = itemId;
+            pickup.sr = sr;
+            NetworkServer.Spawn(go);
         }
     }
 
@@ -332,7 +444,7 @@ public class Inventory : NetworkBehaviour
             case EquipmentSlotType.Armor:    return itemType == ItemType.Armor;
             case EquipmentSlotType.Weapon:   return itemType == ItemType.Weapon;
             case EquipmentSlotType.ChestRig:
-            case EquipmentSlotType.Backpack: return itemType == ItemType.Ammo || itemType == ItemType.Item;
+            case EquipmentSlotType.Backpack: return itemType == ItemType.Ammo || itemType == ItemType.Item || itemType == ItemType.MedKit;
         }
         return false;
     }
@@ -360,6 +472,23 @@ public class Inventory : NetworkBehaviour
             case EquipmentSlotType.ChestRig: if ((uint)index < 5) _data.chestRigItemIds[index] = itemId; break;
             case EquipmentSlotType.Backpack: if ((uint)index < 5) _data.backpackItemIds[index] = itemId; break;
         }
+    }
+
+    int GetDurability(EquipmentSlotType type, int index)
+    {
+        if (type == EquipmentSlotType.ChestRig && (uint)index < 5)
+            return _data.chestRigDurabilities[index];
+        if (type == EquipmentSlotType.Backpack && (uint)index < 5)
+            return _data.backpackDurabilities[index];
+        return 0;
+    }
+
+    void SetDurability(EquipmentSlotType type, int index, int value)
+    {
+        if (type == EquipmentSlotType.ChestRig && (uint)index < 5)
+            _data.chestRigDurabilities[index] = value;
+        if (type == EquipmentSlotType.Backpack && (uint)index < 5)
+            _data.backpackDurabilities[index] = value;
     }
 
     void RemoveFromAll(int itemId)

@@ -1,30 +1,61 @@
 using Mirror;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 当 GameMap 场景加载时，自动以 Host 模式启动 NetworkManager。
-/// 这样从主菜单进入游戏后无需手动操作即可开始。
+/// GameMap 场景加载后自动创建，根据 MainMenu 设置的 NetworkConfig 启动网络。
 /// </summary>
 public class GameMapAutoStart : MonoBehaviour
 {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void AutoInit()
+    static void OnSceneLoaded()
     {
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    static void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
-    {
+        Scene scene = SceneManager.GetActiveScene();
         if (scene.name != "GameMap") return;
 
-        NetworkManager nm = FindObjectOfType<NetworkManager>();
-        if (nm == null) return;
+        // 避免重复创建
+        if (FindObjectOfType<GameMapAutoStart>() != null) return;
 
-        // 如果尚未启动，以 Host 模式启动（Server + Client 合一，适合单机/本地测试）
-        if (nm.mode == NetworkManagerMode.Offline)
+        GameObject go = new GameObject("GameMapAutoStart");
+        go.AddComponent<GameMapAutoStart>();
+        Debug.Log("[GameMapAutoStart] 已自动创建，准备启动网络");
+    }
+
+    void Start()
+    {
+        NetworkManager nm = FindObjectOfType<NetworkManager>();
+        if (nm == null)
+        {
+            Debug.LogError("[GameMapAutoStart] 未找到 NetworkManager！");
+            return;
+        }
+
+        if (nm.mode != NetworkManagerMode.Offline)
+        {
+            Debug.Log("[GameMapAutoStart] NetworkManager 已在运行，跳过自动启动");
+            return;
+        }
+
+        if (NetworkConfig.IsHost)
         {
             nm.StartHost();
-            Debug.Log("[GameMapAutoStart] NetworkManager 已自动以 Host 模式启动");
+            Debug.Log("[GameMapAutoStart] 已 Host 模式启动");
         }
+        else
+        {
+            nm.networkAddress = NetworkConfig.ServerIP;
+            nm.StartClient();
+            Debug.Log($"[GameMapAutoStart] 已 Client 模式启动，连接 {NetworkConfig.ServerIP}");
+        }
+
+        // 禁用 NetworkManager 默认 HUD + 组件
+        nm.showGUI = false;
+        var hud = nm.GetComponent<NetworkManagerHUD>();
+        if (hud != null)
+        {
+            hud.enabled = false;
+            Object.Destroy(hud);
+        }
+        Debug.Log("[GameMapAutoStart] 已禁用 NetworkManager 默认 HUD");
     }
 }

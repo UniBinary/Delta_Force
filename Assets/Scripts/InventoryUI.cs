@@ -17,6 +17,7 @@ public class InventoryUI : MonoBehaviour
     public EquipmentSlotUI[] backpackSlots = new EquipmentSlotUI[5];
 
     private Inventory _inventory;
+    private EquipmentSlotUI _hoveredSlot;
 
     /// <summary>背包是否打开（其他脚本用此属性拦截输入）</summary>
     public static bool IsOpen { get; private set; }
@@ -31,6 +32,20 @@ public class InventoryUI : MonoBehaviour
     {
         _inventory = inv;
         Refresh();
+    }
+
+    /// <summary>
+    /// 获取指定槽位的耐久度（供 Refresh 调用）
+    /// </summary>
+    public int GetSlotDurability(EquipmentSlotType type, int index)
+    {
+        if (_inventory == null) return 0;
+        var data = _inventory.GetData();
+        if (type == EquipmentSlotType.ChestRig && (uint)index < 5)
+            return data.chestRigDurabilities[index];
+        if (type == EquipmentSlotType.Backpack && (uint)index < 5)
+            return data.backpackDurabilities[index];
+        return 0;
     }
 
     public void Toggle()
@@ -57,11 +72,19 @@ public class InventoryUI : MonoBehaviour
             SafeSlot(backpackSlots[i], EquipmentSlotType.Backpack, i, data.backpackItemIds[i]);
     }
 
+    void RefreshSlot(EquipmentSlotUI slot, int itemId)
+    {
+        ItemData item = _inventory != null ? _inventory.GetItemData(itemId) : null;
+        int dur = (item != null && item.itemType == ItemType.MedKit)
+            ? GetSlotDurability(slot.slotType, slot.slotIndex) : 0;
+        slot.SetItem(item, itemId, dur);
+    }
+
     void SafeSlot(EquipmentSlotUI slot, EquipmentSlotType type, int index, int itemId)
     {
         if (slot == null) return;
         slot.Init(type, index, this);
-        slot.SetItem(_inventory.GetItemData(itemId), itemId);
+        RefreshSlot(slot, itemId);
     }
 
     // ---- 拖拽 ----
@@ -102,5 +125,30 @@ public class InventoryUI : MonoBehaviour
     public void OnSlotLeftClick(EquipmentSlotType type, int index)
     {
         // 单击可扩展为"选中"状态
+    }
+
+    // ---- 悬停（用于 Q 键丢弃） ----
+
+    public void OnSlotHoverEnter(EquipmentSlotUI slot)
+    {
+        _hoveredSlot = slot;
+    }
+
+    public void OnSlotHoverExit(EquipmentSlotUI slot)
+    {
+        if (_hoveredSlot == slot)
+            _hoveredSlot = null;
+    }
+
+    void Update()
+    {
+        if (!IsOpen) return;
+        if (_inventory == null) return;
+        if (!_inventory.isLocalPlayer) return;
+
+        if (Input.GetKeyDown(KeyCode.Q) && _hoveredSlot != null && _hoveredSlot.itemId >= 0)
+        {
+            _inventory.CmdDropItem(_hoveredSlot.slotType, _hoveredSlot.slotIndex);
+        }
     }
 }

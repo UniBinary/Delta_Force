@@ -10,17 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 914b2c88b55fd3444b0d4f62ddd68ba0, type: 3}
-  m_Name: I-CPU
+  m_Name: I-Ammo
   m_EditorClassIdentifier: 
-  itemName: CPU
-  itemType: 4
-  icon: {fileID: 21300000, guid: 4b66f21097323d44ab40669b2fb9c53d, type: 3}
+  itemName: "\u5F39\u836F\u7BB1"
+  itemType: 2
+  icon: {fileID: 0}
   protectionLevel: 0
   penetrationLevel: 0
   damageBonus: 0
   healAmount: 0
-  ammoAmount: 0
-  weaponData: {fileID: 0}
+  ammoAmount: 30
   width: 1
   height: 1
   maxDurability: 1

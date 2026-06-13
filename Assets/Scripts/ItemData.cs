@@ -9,7 +9,8 @@ public enum ItemType
     Armor,      // 仅护甲栏
     Weapon,     // 仅枪械栏
     Ammo,       // 弹药，仅胸挂/背包
-    Item        // 变卖物，仅背包，无使用效果
+    Item,       // 变卖物，仅背包，无使用效果
+    MedKit      // 治疗物，仅胸挂/背包，右键使用消耗耐久1:1恢复血量
 }
 
 /// <summary>
@@ -23,12 +24,16 @@ public class ItemData : ScriptableObject
     public ItemType itemType;
     public Sprite icon;
 
-    [Header("装备属性")]
-    public int protectionLevel;     // 护甲防护等级 (1-6)
-    public int penetrationLevel;    // 子弹穿透等级 (1-6)，仅 Ammo 类型有效
-    public int damageBonus;         // 伤害加成
+    [Header("装备属性（头盔/护甲）")]
+    public int protectionLevel;     // 护甲/头盔防护等级 (1-6)
 
-    [Header("消耗品/弹药")]
-    public int healAmount;          // 治疗量（>0 表示可回血）
-    public int ammoAmount;          // 补充弹药量（>0 表示可补弹药）
+    [Header("武器属性（仅 Weapon 类型填）")]
+    public WeaponData weaponData;   // 武器专属参数（子弹、射速等）
+
+    [Header("弹药属性（仅 Ammo 类型填）")]
+    public int ammoAmount;          // 补充弹药量
+
+    [Header("治疗属性（仅 MedKit 类型填）")]
+    public int healAmount;          // 每点耐久恢复的血量
+    public int maxDurability;       // 治疗物最大耐久（使用次数），消耗完即消失
 }

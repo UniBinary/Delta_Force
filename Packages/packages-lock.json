@@ -1,11 +1,11 @@
 {
   "dependencies": {
-    "com.tomleelive.openclaw-unity-plugin": {
-      "version": "https://github.com/TomLeeLive/openclaw-unity-plugin.git",
+    "com.anklebreaker.unity-mcp": {
+      "version": "https://github.com/AnkleBreaker-Studio/unity-mcp-plugin.git",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "4f07b4c2e5dc2ea109b43e3d443c610fea528d51"
+      "hash": "55cd393fe53c4ed7ee9a38124b4d8e5f05f5a323"
     },
     "com.unity.2d.animation": {
       "version": "9.2.0",
