@@ -143,6 +143,8 @@ MonoBehaviour:
   movement: {x: 0, y: 0}
   mousePos: {x: 0, y: 0}
   health: 100
+  armorDurability: 100
+  armorProtectionLevel: 0
 --- !u!114 &1851802962243550598
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -211,10 +213,13 @@ MonoBehaviour:
   syncInterval: 0
   allItems:
   - {fileID: 11400000, guid: 97475487d2ad7b249a4e9a77dfce00e9, type: 2}
+  - {fileID: 11400000, guid: 5b8d0e1f3c6a7b9d2e4f5a6b7c8d9e0f, type: 2}
+  - {fileID: 11400000, guid: 3a7b9c1d2e4f5a6b7c8d9e0f1a2b3c4d, type: 2}
   pickupRadius: 2
   pickupLayer:
     serializedVersion: 2
     m_Bits: 4294967295
+  pickupPrefab: {fileID: 0}
 --- !u!1 &2907692939815414502
 GameObject:
   m_ObjectHideFlags: 0
@@ -256,7 +261,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2907692939815414502}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
@@ -309,7 +314,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2907692939815414502}
-  m_Enabled: 0
+  m_Enabled: 1
 --- !u!1 &7501562882245090882
 GameObject:
   m_ObjectHideFlags: 0
@@ -414,22 +419,5 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  weapons:
-  - weaponName: K416
-    maxMagazineAmmo: 45
-    totalReserveAmmo: 220
-    fireRate: 0.1
-    bulletForce: 50
-    reloadTime: 2
-    bulletPrefab: {fileID: 4877122617009473553, guid: 04ad9133b1720fb47ba424ff1a5b0c9e, type: 3}
-    weaponModel: {fileID: 4877122617009473553, guid: 04ad9133b1720fb47ba424ff1a5b0c9e, type: 3}
-  - weaponName: AK47
-    maxMagazineAmmo: 30
-    totalReserveAmmo: 150
-    fireRate: 0.15
-    bulletForce: 60
-    reloadTime: 3
-    bulletPrefab: {fileID: 4877122617009473553, guid: 04ad9133b1720fb47ba424ff1a5b0c9e, type: 3}
-    weaponModel: {fileID: 4877122617009473553, guid: 04ad9133b1720fb47ba424ff1a5b0c9e, type: 3}
   firePoint: {fileID: 7075211226777660984}
   reloadSound: {fileID: 0}

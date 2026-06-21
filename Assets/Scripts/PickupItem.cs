@@ -11,36 +11,16 @@ public class PickupItem : NetworkBehaviour
     [Header("物品")]
     public int itemId = -1;   // 对应 Inventory.allItems 中的索引
     public SpriteRenderer sr;
-    public float bobSpeed = 1f;
-    public float bobAmount = 0.2f;
-
-    private float _startY;
 
     void Awake()
     {
+        // 自动查找 SpriteRenderer
+        if (sr == null)
+            sr = GetComponent<SpriteRenderer>();
+
         // 设为触发器避免物理阻挡玩家，Physics2D.OverlapCircleAll 仍能检测到
         Collider2D col = GetComponent<Collider2D>();
         if (col != null) col.isTrigger = true;
-    }
-
-    public override void OnStartServer()
-    {
-        if (sr == null) sr = GetComponent<SpriteRenderer>();
-        _startY = transform.position.y;
-    }
-
-    void Update()
-    {
-        // 简单浮动动画
-        if (sr != null)
-        {
-            float bob = Mathf.Sin(Time.time * bobSpeed) * bobAmount;
-            transform.position = new Vector3(
-                transform.position.x,
-                _startY + bob,
-                transform.position.z
-            );
-        }
     }
 
     /// <summary>

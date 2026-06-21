@@ -12,18 +12,11 @@ public class GameMapAutoStart : MonoBehaviour
     {
         Scene scene = SceneManager.GetActiveScene();
         if (scene.name != "GameMap") return;
-
-        // 避免重复创建
-        if (FindObjectOfType<GameMapAutoStart>() != null) return;
-
-        GameObject go = new GameObject("GameMapAutoStart");
-        go.AddComponent<GameMapAutoStart>();
-        Debug.Log("[GameMapAutoStart] 已自动创建，准备启动网络");
     }
 
     void Start()
     {
-        NetworkManager nm = FindObjectOfType<NetworkManager>();
+        NetworkManager nm = gameObject.GetComponent<NetworkManager>();
         if (nm == null)
         {
             Debug.LogError("[GameMapAutoStart] 未找到 NetworkManager！");
@@ -36,26 +29,29 @@ public class GameMapAutoStart : MonoBehaviour
             return;
         }
 
-        if (NetworkConfig.IsHost)
+        // 将 IP 和 Port 设置到 NetworkManager
+        nm.networkAddress = NetworkConfig.ServerIP;
+
+        // 通过 PortTransport 接口设置端口（KCP / Telepathy 均支持）
+        if (nm.transport is PortTransport portTransport)
         {
-            nm.StartHost();
-            Debug.Log("[GameMapAutoStart] 已 Host 模式启动");
+            portTransport.Port = NetworkConfig.Port;
+            Debug.Log($"[GameMapAutoStart] Transport 端口已设为 {NetworkConfig.Port}");
         }
         else
         {
-            nm.networkAddress = NetworkConfig.ServerIP;
-            nm.StartClient();
-            Debug.Log($"[GameMapAutoStart] 已 Client 模式启动，连接 {NetworkConfig.ServerIP}");
+            Debug.LogWarning($"[GameMapAutoStart] 当前 Transport 不支持 PortTransport 接口，无法设置端口");
         }
 
-        // 禁用 NetworkManager 默认 HUD + 组件
-        nm.showGUI = false;
-        var hud = nm.GetComponent<NetworkManagerHUD>();
-        if (hud != null)
+        if (NetworkConfig.IsHost)
         {
-            hud.enabled = false;
-            Object.Destroy(hud);
+            nm.StartHost();
+            Debug.Log($"[GameMapAutoStart] Host 模式启动 — IP={NetworkConfig.ServerIP} Port={NetworkConfig.Port}");
         }
-        Debug.Log("[GameMapAutoStart] 已禁用 NetworkManager 默认 HUD");
+        else
+        {
+            nm.StartClient();
+            Debug.Log($"[GameMapAutoStart] Client 模式启动 — 连接 {NetworkConfig.ServerIP}:{NetworkConfig.Port}");
+        }
     }
 }

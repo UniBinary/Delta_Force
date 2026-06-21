@@ -38,9 +38,6 @@ public class InventoryData
 /// </summary>
 public class Inventory : NetworkBehaviour
 {
-    [Header("物品数据库")]
-    public ItemData[] allItems;   // 所有可用物品（索引即 itemId）
-
     [Header("地面物品检测")]
     public float pickupRadius = 2f;
     public LayerMask pickupLayer = -1;
@@ -58,21 +55,18 @@ public class Inventory : NetworkBehaviour
     // 客户端缓存
     private InventoryUI _ui;
     private bool _uiSearched;
-    private Dictionary<int, ItemData> _itemLookup;
 
     #region Startup
 
     public override void OnStartServer()
     {
         base.OnStartServer();
-        BuildLookup();
         _syncedInventoryJson = JsonUtility.ToJson(_data);
     }
 
     public override void OnStartClient()
     {
         base.OnStartClient();
-        BuildLookup();
         if (!string.IsNullOrEmpty(_syncedInventoryJson))
             ApplyInventoryJson(_syncedInventoryJson);
     }
@@ -97,14 +91,6 @@ public class Inventory : NetworkBehaviour
                 break;
             }
         }
-    }
-
-    void BuildLookup()
-    {
-        _itemLookup = new Dictionary<int, ItemData>();
-        for (int i = 0; i < allItems.Length; i++)
-            if (allItems[i] != null)
-                _itemLookup[i] = allItems[i];
     }
 
     #endregion
@@ -172,8 +158,7 @@ public class Inventory : NetworkBehaviour
             return;
         }
 
-        ItemData theItem = pickup.itemId >= 0 && pickup.itemId < allItems.Length
-            ? allItems[pickup.itemId] : null;
+        ItemData theItem = ItemDatabase.GetItemData(pickup.itemId);
         Debug.Log($"[Inventory] 捡起 itemId={pickup.itemId} name={theItem?.itemName} type={theItem?.itemType}");
 
         // 尝试放进对应类型槽位
@@ -197,8 +182,8 @@ public class Inventory : NetworkBehaviour
     /// </summary>
     bool TryAddItem(int itemId)
     {
-        if (!_itemLookup.ContainsKey(itemId)) return false;
-        ItemData item = _itemLookup[itemId];
+        ItemData item = ItemDatabase.GetItemData(itemId);
+        if (item == null) return false;
 
         switch (item.itemType)
         {
@@ -275,8 +260,8 @@ public class Inventory : NetworkBehaviour
     [Command]
     public void CmdEquipItem(int itemId, EquipmentSlotType slotType, int slotIndex)
     {
-        if (!_itemLookup.ContainsKey(itemId)) return;
-        ItemData item = _itemLookup[itemId];
+        ItemData item = ItemDatabase.GetItemData(itemId);
+        if (item == null) return;
 
         // 检查物品类型是否匹配槽位
         if (!CanPlaceInSlot(item.itemType, slotType)) return;
@@ -304,8 +289,10 @@ public class Inventory : NetworkBehaviour
         int idB = GetSlot(typeB, idxB);
 
         // 检查目标槽能否放 idA，源槽能否放 idB
-        if (idA >= 0 && !CanPlaceInSlot(_itemLookup[idA].itemType, typeB)) return;
-        if (idB >= 0 && !CanPlaceInSlot(_itemLookup[idB].itemType, typeA)) return;
+        ItemData itemA = idA >= 0 ? ItemDatabase.GetItemData(idA) : null;
+        ItemData itemB = idB >= 0 ? ItemDatabase.GetItemData(idB) : null;
+        if (itemA != null && !CanPlaceInSlot(itemA.itemType, typeB)) return;
+        if (itemB != null && !CanPlaceInSlot(itemB.itemType, typeA)) return;
 
         // 交换物品
         SetSlot(typeA, idxA, idB);
@@ -324,9 +311,8 @@ public class Inventory : NetworkBehaviour
     public void CmdUseItem(EquipmentSlotType slotType, int slotIndex)
     {
         int itemId = GetSlot(slotType, slotIndex);
-        if (itemId < 0 || !_itemLookup.ContainsKey(itemId)) return;
-
-        ItemData item = _itemLookup[itemId];
+        ItemData item = ItemDatabase.GetItemData(itemId);
+        if (item == null) return;
         bool consumed = false;
 
         switch (item.itemType)
@@ -389,9 +375,9 @@ public class Inventory : NetworkBehaviour
     public void CmdDropItem(EquipmentSlotType slotType, int slotIndex)
     {
         int itemId = GetSlot(slotType, slotIndex);
-        if (itemId < 0 || !_itemLookup.ContainsKey(itemId)) return;
+        ItemData item = ItemDatabase.GetItemData(itemId);
+        if (item == null) return;
 
-        ItemData item = _itemLookup[itemId];
         int dur = GetDurability(slotType, slotIndex);
 
         // 从背包移除
@@ -565,8 +551,7 @@ public class Inventory : NetworkBehaviour
 
     public ItemData GetItemData(int itemId)
     {
-        if (itemId < 0 || _itemLookup == null || !_itemLookup.ContainsKey(itemId)) return null;
-        return _itemLookup[itemId];
+        return ItemDatabase.GetItemData(itemId);
     }
 
     public InventoryData GetData() => _data;

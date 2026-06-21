@@ -37,14 +37,11 @@ public class Player : NetworkBehaviour
             col.radius = 0.5f;
             col.isTrigger = false;
         }
-    }
 
-    public override void OnStartLocalPlayer()
-    {
-        if (cam != null)
+        // 自动查找子摄像机引用（不再禁用，始终保持激活）
+        if (cam == null)
         {
-            cam.enabled = true;
-            cam.GetComponent<AudioListener>().enabled = true;
+            cam = GetComponentInChildren<Camera>(true);
         }
     }
 
@@ -73,6 +70,7 @@ public class Player : NetworkBehaviour
     void Update()
     {
         if (!isLocalPlayer) return;
+        if (cam == null) return;
 
         movement.x = Input.GetAxisRaw("Horizontal");
         movement.y = Input.GetAxisRaw("Vertical");
@@ -93,7 +91,8 @@ public class Player : NetworkBehaviour
 
     void LateUpdate()
     {
-        cam.transform.rotation = Quaternion.identity;
+        if (cam != null)
+            cam.transform.rotation = Quaternion.identity;
     }
 
     [Server]
