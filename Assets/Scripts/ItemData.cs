@@ -31,7 +31,9 @@ public class ItemData : ScriptableObject
     public WeaponData weaponData;   // 武器专属参数（子弹、射速等）
 
     [Header("弹药属性（仅 Ammo 类型填）")]
+    public string ammoType = "9mm";         // 弹药类型，匹配 WeaponData 的 ammoType
     public int ammoAmount;          // 补充弹药量
+    public int penetrationLevel;    // 子弹穿透等级 (1-6)，使用此弹药后覆盖武器默认穿透
 
     [Header("治疗属性（仅 MedKit 类型填）")]
     public int healAmount;          // 每点耐久恢复的血量

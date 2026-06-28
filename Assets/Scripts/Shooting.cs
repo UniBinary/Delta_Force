@@ -17,16 +17,13 @@ public class Shooting : NetworkBehaviour
 
     // 每把武器的弹药状态
     private int[] _magazineAmmo = new int[2];
-    private int[] _reserveAmmo = new int[2];
+    private int[] _ammoPenetrationLevel = new int[2];       // 弹药提供的穿透等级（0 表示使用武器默认）
     private bool[] _isReloading = new bool[2];
     private bool[] _ammoInitialized = new bool[2];          // 弹药是否已初始化
 
     // 同步弹药
     [SyncVar(hook = nameof(OnMagazineChanged))]
     private int _syncedMagazineAmmo;
-
-    [SyncVar(hook = nameof(OnReserveChanged))]
-    private int _syncedReserveAmmo;
 
     private float _nextFireTime;
     private TextMeshProUGUI _magazineText;
@@ -49,7 +46,6 @@ public class Shooting : NetworkBehaviour
         base.OnStartServer();
         // 服务端初始化同步值
         _syncedMagazineAmmo = 30;   // 默认值，后续由 RefreshWeapons 覆盖
-        _syncedReserveAmmo = 90;
     }
 
     void Update()
@@ -116,18 +112,16 @@ public class Shooting : NetworkBehaviour
             if (_weaponDatas[i] != newWd)
             {
                 _weaponDatas[i] = newWd;
-                // 新武器初始化弹药
+                // 新武器初始化弹药（弹匣装满，备弹从背包查询）
                 if (newWd != null && !_ammoInitialized[i])
                 {
                     _magazineAmmo[i] = newWd.maxMagazineAmmo;
-                    _reserveAmmo[i] = newWd.totalReserveAmmo;
                     _ammoInitialized[i] = true;
                 }
                 else if (newWd == null)
                 {
                     _ammoInitialized[i] = false;
                     _magazineAmmo[i] = 0;
-                    _reserveAmmo[i] = 0;
                 }
                 changed = true;
             }
@@ -151,6 +145,16 @@ public class Shooting : NetworkBehaviour
         {
             SyncAmmoToClient();
         }
+    }
+
+    /// <summary>
+    /// 获取当前武器匹配的背包备弹数量
+    /// </summary>
+    int GetReserveAmmoFromInventory()
+    {
+        WeaponData w = CurrentWeapon;
+        if (w == null || _inventory == null) return 0;
+        return _inventory.GetAmmoCount(w.ammoType);
     }
 
     /// <summary>
@@ -248,6 +252,10 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
+        // 检查背包中是否有匹配的弹药类型，没有则无法射击
+        if (_inventory != null && _inventory.GetAmmoCount(w.ammoType) <= 0)
+            return;
+
         _nextFireTime = Time.time + w.fireRate;
         CmdShoot();
     }
@@ -260,13 +268,22 @@ public class Shooting : NetworkBehaviour
         if (w == null) return;
         if (_magazineAmmo[idx] <= 0) return;
 
+        // 服务端也检查是否有匹配弹药
+        if (_inventory != null && _inventory.GetAmmoCount(w.ammoType) <= 0) return;
+
         _magazineAmmo[idx]--;
         SyncAmmoToClient();
 
         GameObject bullet = Instantiate(w.bulletPrefab, firePoint.position, firePoint.rotation);
         Bullet bulletComp = bullet.GetComponent<Bullet>();
         if (bulletComp != null)
-            bulletComp.penetrationLevel = w.penetrationLevel;
+        {
+            // 优先使用弹药穿透等级，否则退回到武器默认穿透等级
+            int pen = _ammoPenetrationLevel[idx] > 0 ? _ammoPenetrationLevel[idx] : w.penetrationLevel;
+            bulletComp.penetrationLevel = pen;
+            // 弹药穿透等级一次性消耗（开一枪就消耗）
+            _ammoPenetrationLevel[idx] = 0;
+        }
         Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
         if (rb != null)
             rb.AddForce(firePoint.up * w.bulletForce, ForceMode2D.Impulse);
@@ -279,7 +296,9 @@ public class Shooting : NetworkBehaviour
         if (_isReloading[idx]) return;
         if (CurrentWeapon == null) return;
         if (_syncedMagazineAmmo >= CurrentWeapon.maxMagazineAmmo) return;
-        if (_syncedReserveAmmo <= 0) return;
+
+        // 检查背包中是否有匹配的弹药
+        if (_inventory != null && _inventory.GetAmmoCount(CurrentWeapon.ammoType) <= 0) return;
 
         CmdReload();
     }
@@ -298,11 +317,21 @@ public class Shooting : NetworkBehaviour
         _isReloading[idx] = true;
         yield return new WaitForSeconds(w.reloadTime);
 
+        // 从背包消耗弹药
         int needed = w.maxMagazineAmmo - _magazineAmmo[idx];
-        int available = Mathf.Min(needed, _reserveAmmo[idx]);
+        int penLevel = 0;
+        int available = 0;
+
+        if (_inventory != null)
+        {
+            available = _inventory.ConsumeAmmo(w.ammoType, needed, out penLevel);
+        }
 
         _magazineAmmo[idx] += available;
-        _reserveAmmo[idx] -= available;
+
+        // 弹药穿透等级取最大值（保留更好的穿透等级）
+        if (penLevel > _ammoPenetrationLevel[idx])
+            _ammoPenetrationLevel[idx] = penLevel;
 
         SyncAmmoToClient();
         _isReloading[idx] = false;
@@ -319,7 +348,7 @@ public class Shooting : NetworkBehaviour
     }
 
     /// <summary>
-    /// 同步当前武器弹药到 SyncVar（仅服务端调用）
+    /// 同步当前武器弹匣到 SyncVar（仅服务端调用）
     /// </summary>
     void SyncAmmoToClient()
     {
@@ -327,22 +356,17 @@ public class Shooting : NetworkBehaviour
         if (idx >= 0 && idx < 2)
         {
             _syncedMagazineAmmo = _magazineAmmo[idx];
-            _syncedReserveAmmo = _reserveAmmo[idx];
         }
     }
 
     /// <summary>
-    /// 由 Inventory 调用：给当前武器补充弹药（服务端执行）
+    /// 由 Inventory 调用：给当前武器补充弹药（已废弃，弹药直接留在背包中，换弹时自动消耗）
     /// </summary>
     [Server]
-    public void AddAmmo(int amount)
+    public void AddAmmo(int amount, int penetrationLevel)
     {
-        int idx = _currentWeaponIndex;
-        if (idx >= 0 && idx < 2)
-        {
-            _reserveAmmo[idx] += amount;
-            SyncAmmoToClient();
-        }
+        // 弹药现在直接留在背包中，换弹时自动消耗
+        // 该方法保留以保持接口兼容，但不再使用
     }
 
     void UpdateAmmoUI()
@@ -352,7 +376,7 @@ public class Shooting : NetworkBehaviour
         if (_magazineText != null)
             _magazineText.text = _syncedMagazineAmmo.ToString("D3");
         if (_reserveText != null)
-            _reserveText.text = _syncedReserveAmmo.ToString("D3");
+            _reserveText.text = GetReserveAmmoFromInventory().ToString("D3");
         if (_weaponNameText != null)
             _weaponNameText.text = w != null ? w.weaponName : "";
     }
@@ -362,11 +386,5 @@ public class Shooting : NetworkBehaviour
     {
         if (_magazineText != null)
             _magazineText.text = newVal.ToString("D3");
-    }
-
-    void OnReserveChanged(int oldVal, int newVal)
-    {
-        if (_reserveText != null)
-            _reserveText.text = newVal.ToString("D3");
     }
 }

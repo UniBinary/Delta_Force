@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 914b2c88b55fd3444b0d4f62ddd68ba0, type: 3}
-  m_Name: A-Ammo
+  m_Name: A-556x45_L5
   m_EditorClassIdentifier: 
-  itemName: "\u5F39\u836F\u7BB1"
-  itemType: 2
-  icon: {fileID: 21300000, guid: 9e7771f048fdf40839b6ee9dbacad67c, type: 3}
+  itemName: 5.56x45mm M995
+  itemType: 3
+  icon: {fileID: 21300000, guid: 3510c6ea272602c43b7415c5184992d4, type: 3}
   protectionLevel: 0
   weaponData:
     weaponName: "\u624B\u67AA"
@@ -26,6 +26,7 @@ MonoBehaviour:
     reloadTime: 1.5
     bulletPrefab: {fileID: 0}
     weaponModel: {fileID: 0}
-  ammoAmount: 30
+  ammoAmount: 60
+  penetrationLevel: 5
   healAmount: 0
-  maxDurability: 1
+  maxDurability: 0

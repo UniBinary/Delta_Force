@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 914b2c88b55fd3444b0d4f62ddd68ba0, type: 3}
-  m_Name: M-MedKit
+  m_Name: A-556x45_L2
   m_EditorClassIdentifier: 
-  itemName: "\u533B\u7597\u5305"
-  itemType: 5
-  icon: {fileID: 0}
+  itemName: 5.56x45mm FMJ
+  itemType: 3
+  icon: {fileID: 21300000, guid: a05fbb30fde01d641a6a6ead3913502a, type: 3}
   protectionLevel: 0
   weaponData:
     weaponName: "\u624B\u67AA"
@@ -26,6 +26,7 @@ MonoBehaviour:
     reloadTime: 1.5
     bulletPrefab: {fileID: 0}
     weaponModel: {fileID: 0}
-  ammoAmount: 0
-  healAmount: 50
-  maxDurability: 3
+  ammoAmount: 60
+  penetrationLevel: 2
+  healAmount: 0
+  maxDurability: 0

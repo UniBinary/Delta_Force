@@ -318,16 +318,7 @@ public class Inventory : NetworkBehaviour
         switch (item.itemType)
         {
             case ItemType.Ammo:
-                // 补充弹药：右键消耗整格
-                if (item.ammoAmount > 0)
-                {
-                    Shooting s = GetComponent<Shooting>();
-                    if (s != null)
-                    {
-                        s.AddAmmo(item.ammoAmount);
-                        consumed = true;
-                    }
-                }
+                // 弹药现在直接留存在背包中，换弹时自动消耗。右键不再有独立消耗逻辑。
                 break;
 
             case ItemType.MedKit:
@@ -402,8 +393,8 @@ public class Inventory : NetworkBehaviour
         }
         else
         {
-            // 如果没有指定 prefab，尝试用 Resources 或直接创建
-            Debug.LogWarning("[Inventory] pickupPrefab 未设置，无法在地面生成物品。使用以下代码在新 GameObject 上添加 PickupItem：");
+            // 如果没有指定 prefab，动态创建带 NetworkIdentity 的 GameObject
+            Debug.LogWarning("[Inventory] pickupPrefab 未设置，动态创建掉落物品（建议在 Player prefab 上设置 pickupPrefab）。");
             GameObject go = new GameObject($"Pickup_{item.itemName}");
             go.transform.position = dropPos;
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
@@ -411,6 +402,8 @@ public class Inventory : NetworkBehaviour
             sr.sortingOrder = 1;
             CircleCollider2D col = go.AddComponent<CircleCollider2D>();
             col.radius = 0.5f;
+            col.isTrigger = true;
+            NetworkIdentity ni = go.AddComponent<NetworkIdentity>();
             PickupItem pickup = go.AddComponent<PickupItem>();
             pickup.itemId = itemId;
             pickup.sr = sr;
@@ -547,7 +540,7 @@ public class Inventory : NetworkBehaviour
 
     #endregion
 
-    #region Public (for UI)
+    #region Public (for UI / Shooting)
 
     public ItemData GetItemData(int itemId)
     {
@@ -555,6 +548,79 @@ public class Inventory : NetworkBehaviour
     }
 
     public InventoryData GetData() => _data;
+
+    /// <summary>
+    /// 统计胸挂+背包中所有匹配 ammoType 的弹药总数量（Shooting 用来显示备弹数，以及判断能否射击）
+    /// </summary>
+    public int GetAmmoCount(string ammoType)
+    {
+        int total = 0;
+        // 胸挂
+        for (int i = 0; i < 5; i++)
+        {
+            int itemId = _data.chestRigItemIds[i];
+            if (itemId < 0) continue;
+            ItemData item = ItemDatabase.GetItemData(itemId);
+            if (item != null && item.itemType == ItemType.Ammo && item.ammoType == ammoType)
+                total += item.ammoAmount;
+        }
+        // 背包
+        for (int i = 0; i < 5; i++)
+        {
+            int itemId = _data.backpackItemIds[i];
+            if (itemId < 0) continue;
+            ItemData item = ItemDatabase.GetItemData(itemId);
+            if (item != null && item.itemType == ItemType.Ammo && item.ammoType == ammoType)
+                total += item.ammoAmount;
+        }
+        return total;
+    }
+
+    /// <summary>
+    /// 从胸挂/背包消耗匹配 ammoType 的弹药（换弹时由 Shooting 调用）。
+    /// 优先消耗胸挂中的弹药，再消耗背包中的。
+    /// 弹药以整格为单位消耗（拿掉整格物品）。
+    /// 返回实际获得的弹药数，并输出这些弹药中的最大穿透等级。
+    /// </summary>
+    public int ConsumeAmmo(string ammoType, int needed, out int bestPenetrationLevel)
+    {
+        bestPenetrationLevel = 0;
+        int consumed = 0;
+
+        // 先消耗胸挂
+        consumed += ConsumeAmmoFromSlots(_data.chestRigItemIds, ammoType, needed - consumed, ref bestPenetrationLevel);
+        // 再消耗背包
+        if (consumed < needed)
+            consumed += ConsumeAmmoFromSlots(_data.backpackItemIds, ammoType, needed - consumed, ref bestPenetrationLevel);
+
+        if (consumed > 0)
+            Sync();
+
+        return consumed;
+    }
+
+    private int ConsumeAmmoFromSlots(int[] slotIds, string ammoType, int needed, ref int bestPenLevel)
+    {
+        int consumed = 0;
+        for (int i = 0; i < slotIds.Length && consumed < needed; i++)
+        {
+            int itemId = slotIds[i];
+            if (itemId < 0) continue;
+            ItemData item = ItemDatabase.GetItemData(itemId);
+            if (item == null || item.itemType != ItemType.Ammo || item.ammoType != ammoType) continue;
+
+            int available = item.ammoAmount;
+            consumed += available;
+
+            // 取最大穿透等级
+            if (item.penetrationLevel > bestPenLevel)
+                bestPenLevel = item.penetrationLevel;
+
+            // 整格消耗：移除该槽位物品
+            slotIds[i] = -1;
+        }
+        return consumed;
+    }
 
     #endregion
 }

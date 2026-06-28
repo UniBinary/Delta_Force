@@ -11,8 +11,8 @@ public class WeaponData
     public string weaponName = "手枪";
 
     [Header("子弹参数")]
+    public string ammoType = "9mm";         // 弹药类型，匹配 ItemData 的 ammoType
     public int maxMagazineAmmo = 30;       // 弹匣容量
-    public int totalReserveAmmo = 180;     // 总备弹量
     public int penetrationLevel = 1;       // 子弹穿透等级 (1-6)
 
     [Header("射击参数")]
