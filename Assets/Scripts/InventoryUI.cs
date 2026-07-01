@@ -48,6 +48,20 @@ public class InventoryUI : MonoBehaviour
         return 0;
     }
 
+    /// <summary>
+    /// 获取指定槽位的弹药计数（供 Refresh 调用）
+    /// </summary>
+    public int GetSlotAmmoCount(EquipmentSlotType type, int index)
+    {
+        if (_inventory == null) return 0;
+        var data = _inventory.GetData();
+        if (type == EquipmentSlotType.ChestRig && (uint)index < 5)
+            return data.chestRigAmmoCounts[index];
+        if (type == EquipmentSlotType.Backpack && (uint)index < 5)
+            return data.backpackAmmoCounts[index];
+        return 0;
+    }
+
     public void Toggle()
     {
         if (panel == null) return;
@@ -75,9 +89,15 @@ public class InventoryUI : MonoBehaviour
     void RefreshSlot(EquipmentSlotUI slot, int itemId)
     {
         ItemData item = _inventory != null ? _inventory.GetItemData(itemId) : null;
-        int dur = (item != null && item.itemType == ItemType.MedKit)
-            ? GetSlotDurability(slot.slotType, slot.slotIndex) : 0;
-        slot.SetItem(item, itemId, dur);
+        int count = 0;
+        if (item != null)
+        {
+            if (item.itemType == ItemType.MedKit)
+                count = GetSlotDurability(slot.slotType, slot.slotIndex);
+            else if (item.itemType == ItemType.Ammo)
+                count = GetSlotAmmoCount(slot.slotType, slot.slotIndex);
+        }
+        slot.SetItem(item, itemId, count);
     }
 
     void SafeSlot(EquipmentSlotUI slot, EquipmentSlotType type, int index, int itemId)

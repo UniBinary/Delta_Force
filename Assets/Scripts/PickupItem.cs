@@ -9,7 +9,9 @@ using UnityEngine;
 public class PickupItem : NetworkBehaviour
 {
     [Header("物品")]
-    public int itemId = -1;   // 对应 Inventory.allItems 中的索引
+    public int itemId = -1;        // 对应 ItemDatabase 中的索引
+    public int ammoCount;          // 弹药实际数量（仅 Ammo 类型有效，>0 时覆盖 ItemData.ammoAmount）
+    public int magazineAmmo;       // 武器弹匣剩余子弹（仅 Weapon 类型有效）
     public SpriteRenderer sr;
 
     void Awake()

@@ -30,6 +30,10 @@ public class InventoryData
     // 治疗物耐久度（仅 MedKit 类型使用，索引对应槽位数组）
     public int[] chestRigDurabilities = new int[5];
     public int[] backpackDurabilities = new int[5];
+
+    // 弹药运行时计数（仅 Ammo 类型使用，初始为 item.ammoAmount，消耗后减少）
+    public int[] chestRigAmmoCounts = new int[5];
+    public int[] backpackAmmoCounts = new int[5];
 }
 
 /// <summary>
@@ -159,13 +163,28 @@ public class Inventory : NetworkBehaviour
         }
 
         ItemData theItem = ItemDatabase.GetItemData(pickup.itemId);
-        Debug.Log($"[Inventory] 捡起 itemId={pickup.itemId} name={theItem?.itemName} type={theItem?.itemType}");
+        Debug.Log($"[Inventory] 捡起 itemId={pickup.itemId} name={theItem?.itemName} type={theItem?.itemType} ammoCount={pickup.ammoCount}");
 
-        // 尝试放进对应类型槽位
-        if (!TryAddItem(pickup.itemId))
+        // 尝试放进对应类型槽位（弹药类可传递实际数量覆盖）
+        if (!TryAddItem(pickup.itemId, pickup.ammoCount))
         {
             Debug.LogWarning($"[Inventory] TryAddItem 失败（包满或类型不匹配）");
             return;
+        }
+
+        // 如果是武器且有弹匣数据，恢复弹匣状态
+        if (theItem.itemType == ItemType.Weapon && pickup.magazineAmmo > 0)
+        {
+            Shooting shooting = GetComponentInChildren<Shooting>();
+            for (int i = 0; i < 2; i++)
+            {
+                if (_data.weaponItemIds[i] == pickup.itemId)
+                {
+                    shooting?.SetMagazineState(i, pickup.magazineAmmo);
+                    Debug.Log($"[Inventory] 恢复武器槽[{i}]弹匣: {pickup.magazineAmmo}发");
+                    break;
+                }
+            }
         }
 
         // 从世界移除
@@ -179,8 +198,9 @@ public class Inventory : NetworkBehaviour
 
     /// <summary>
     /// 尝试把物品放进合适的槽位。成功返回 true。
+    /// ammoCountOverride: 弹药类物品的实际数量（>0 时覆盖 ItemData.ammoAmount）
     /// </summary>
-    bool TryAddItem(int itemId)
+    bool TryAddItem(int itemId, int ammoCountOverride = 0)
     {
         ItemData item = ItemDatabase.GetItemData(itemId);
         if (item == null) return false;
@@ -213,12 +233,47 @@ public class Inventory : NetworkBehaviour
                 return false;
 
             case ItemType.Ammo:
-                // 弹药：先胸挂，后背包
-                for (int i = 0; i < 5; i++)
-                    if (_data.chestRigItemIds[i] < 0) { _data.chestRigItemIds[i] = itemId; Sync(); return true; }
-                for (int i = 0; i < 5; i++)
-                    if (_data.backpackItemIds[i] < 0) { _data.backpackItemIds[i] = itemId; Sync(); return true; }
-                return false;
+                {
+                    int amount = ammoCountOverride > 0 ? ammoCountOverride : item.ammoAmount;
+                    // 同型号同等级弹药堆叠：先在胸挂中找已有同 itemId 的槽位
+                    for (int i = 0; i < 5; i++)
+                    {
+                        if (_data.chestRigItemIds[i] == itemId)
+                        {
+                            _data.chestRigAmmoCounts[i] += amount;
+                            Sync();
+                            return true;
+                        }
+                    }
+                    // 再在背包中找已有同 itemId 的槽位
+                    for (int i = 0; i < 5; i++)
+                    {
+                        if (_data.backpackItemIds[i] == itemId)
+                        {
+                            _data.backpackAmmoCounts[i] += amount;
+                            Sync();
+                            return true;
+                        }
+                    }
+                    // 无同型号：找空槽位（先胸挂，后背包）
+                    for (int i = 0; i < 5; i++)
+                        if (_data.chestRigItemIds[i] < 0)
+                        {
+                            _data.chestRigItemIds[i] = itemId;
+                            _data.chestRigAmmoCounts[i] = amount;
+                            Sync();
+                            return true;
+                        }
+                    for (int i = 0; i < 5; i++)
+                        if (_data.backpackItemIds[i] < 0)
+                        {
+                            _data.backpackItemIds[i] = itemId;
+                            _data.backpackAmmoCounts[i] = amount;
+                            Sync();
+                            return true;
+                        }
+                    return false;
+                }
 
             case ItemType.Item:
                 // 变卖物：只进背包
@@ -304,6 +359,12 @@ public class Inventory : NetworkBehaviour
         SetDurability(typeA, idxA, durB);
         SetDurability(typeB, idxB, durA);
 
+        // 交换弹药计数（仅 Ammo 类型有意义）
+        int ammoA = GetAmmoCountInSlot(typeA, idxA);
+        int ammoB = GetAmmoCountInSlot(typeB, idxB);
+        SetAmmoCountInSlot(typeA, idxA, ammoB);
+        SetAmmoCountInSlot(typeB, idxB, ammoA);
+
         Sync();
     }
 
@@ -370,10 +431,20 @@ public class Inventory : NetworkBehaviour
         if (item == null) return;
 
         int dur = GetDurability(slotType, slotIndex);
+        int ammoCount = GetAmmoCountInSlot(slotType, slotIndex);
+        int magAmmo = 0;
+
+        // 武器：保存弹匣状态到掉落物
+        if (item.itemType == ItemType.Weapon)
+        {
+            Shooting shooting = GetComponentInChildren<Shooting>();
+            magAmmo = shooting != null ? shooting.GetMagazineAmmo(slotIndex) : 0;
+        }
 
         // 从背包移除
         SetSlot(slotType, slotIndex, -1);
         SetDurability(slotType, slotIndex, 0);
+        SetAmmoCountInSlot(slotType, slotIndex, 0);
         Sync();
 
         // 在地面生成物品
@@ -386,6 +457,8 @@ public class Inventory : NetworkBehaviour
             if (pickup != null)
             {
                 pickup.itemId = itemId;
+                pickup.ammoCount = ammoCount; // 保存实际弹药数量
+                pickup.magazineAmmo = magAmmo; // 保存武器弹匣
                 if (item.icon != null)
                     pickup.SetItem(itemId, item.icon);
             }
@@ -406,6 +479,8 @@ public class Inventory : NetworkBehaviour
             NetworkIdentity ni = go.AddComponent<NetworkIdentity>();
             PickupItem pickup = go.AddComponent<PickupItem>();
             pickup.itemId = itemId;
+            pickup.ammoCount = ammoCount;
+            pickup.magazineAmmo = magAmmo;
             pickup.sr = sr;
             NetworkServer.Spawn(go);
         }
@@ -470,13 +545,30 @@ public class Inventory : NetworkBehaviour
             _data.backpackDurabilities[index] = value;
     }
 
+    int GetAmmoCountInSlot(EquipmentSlotType type, int index)
+    {
+        if (type == EquipmentSlotType.ChestRig && (uint)index < 5)
+            return _data.chestRigAmmoCounts[index];
+        if (type == EquipmentSlotType.Backpack && (uint)index < 5)
+            return _data.backpackAmmoCounts[index];
+        return 0;
+    }
+
+    void SetAmmoCountInSlot(EquipmentSlotType type, int index, int value)
+    {
+        if (type == EquipmentSlotType.ChestRig && (uint)index < 5)
+            _data.chestRigAmmoCounts[index] = value;
+        if (type == EquipmentSlotType.Backpack && (uint)index < 5)
+            _data.backpackAmmoCounts[index] = value;
+    }
+
     void RemoveFromAll(int itemId)
     {
         if (_data.helmetItemId == itemId) _data.helmetItemId = -1;
         if (_data.armorItemId == itemId) _data.armorItemId = -1;
         for (int i = 0; i < 2; i++) if (_data.weaponItemIds[i] == itemId) _data.weaponItemIds[i] = -1;
-        for (int i = 0; i < 5; i++) if (_data.chestRigItemIds[i] == itemId) _data.chestRigItemIds[i] = -1;
-        for (int i = 0; i < 5; i++) if (_data.backpackItemIds[i] == itemId) _data.backpackItemIds[i] = -1;
+        for (int i = 0; i < 5; i++) if (_data.chestRigItemIds[i] == itemId) { _data.chestRigItemIds[i] = -1; _data.chestRigAmmoCounts[i] = 0; }
+        for (int i = 0; i < 5; i++) if (_data.backpackItemIds[i] == itemId) { _data.backpackItemIds[i] = -1; _data.backpackAmmoCounts[i] = 0; }
     }
 
     void Sync()
@@ -550,7 +642,7 @@ public class Inventory : NetworkBehaviour
     public InventoryData GetData() => _data;
 
     /// <summary>
-    /// 统计胸挂+背包中所有匹配 ammoType 的弹药总数量（Shooting 用来显示备弹数，以及判断能否射击）
+    /// 统计胸挂+背包中所有匹配 ammoType 的弹药总数量（使用运行时计数）
     /// </summary>
     public int GetAmmoCount(string ammoType)
     {
@@ -562,7 +654,7 @@ public class Inventory : NetworkBehaviour
             if (itemId < 0) continue;
             ItemData item = ItemDatabase.GetItemData(itemId);
             if (item != null && item.itemType == ItemType.Ammo && item.ammoType == ammoType)
-                total += item.ammoAmount;
+                total += _data.chestRigAmmoCounts[i];
         }
         // 背包
         for (int i = 0; i < 5; i++)
@@ -571,7 +663,7 @@ public class Inventory : NetworkBehaviour
             if (itemId < 0) continue;
             ItemData item = ItemDatabase.GetItemData(itemId);
             if (item != null && item.itemType == ItemType.Ammo && item.ammoType == ammoType)
-                total += item.ammoAmount;
+                total += _data.backpackAmmoCounts[i];
         }
         return total;
     }
@@ -579,19 +671,18 @@ public class Inventory : NetworkBehaviour
     /// <summary>
     /// 从胸挂/背包消耗匹配 ammoType 的弹药（换弹时由 Shooting 调用）。
     /// 优先消耗胸挂中的弹药，再消耗背包中的。
-    /// 弹药以整格为单位消耗（拿掉整格物品）。
-    /// 返回实际获得的弹药数，并输出这些弹药中的最大穿透等级。
+    /// 支持部分消耗：多余的弹药保留在槽位中。
+    /// 返回实际获得的弹药数，并将每发子弹的穿透等级写入 consumedLevels 列表。
     /// </summary>
-    public int ConsumeAmmo(string ammoType, int needed, out int bestPenetrationLevel)
+    public int ConsumeAmmo(string ammoType, int needed, System.Collections.Generic.List<int> consumedLevels)
     {
-        bestPenetrationLevel = 0;
         int consumed = 0;
 
         // 先消耗胸挂
-        consumed += ConsumeAmmoFromSlots(_data.chestRigItemIds, ammoType, needed - consumed, ref bestPenetrationLevel);
+        consumed += ConsumeAmmoFromSlots(_data.chestRigItemIds, _data.chestRigAmmoCounts, ammoType, needed - consumed, consumedLevels);
         // 再消耗背包
         if (consumed < needed)
-            consumed += ConsumeAmmoFromSlots(_data.backpackItemIds, ammoType, needed - consumed, ref bestPenetrationLevel);
+            consumed += ConsumeAmmoFromSlots(_data.backpackItemIds, _data.backpackAmmoCounts, ammoType, needed - consumed, consumedLevels);
 
         if (consumed > 0)
             Sync();
@@ -599,25 +690,28 @@ public class Inventory : NetworkBehaviour
         return consumed;
     }
 
-    private int ConsumeAmmoFromSlots(int[] slotIds, string ammoType, int needed, ref int bestPenLevel)
+    private int ConsumeAmmoFromSlots(int[] slotIds, int[] ammoCounts, string ammoType, int needed, System.Collections.Generic.List<int> consumedLevels)
     {
         int consumed = 0;
         for (int i = 0; i < slotIds.Length && consumed < needed; i++)
         {
             int itemId = slotIds[i];
-            if (itemId < 0) continue;
+            if (itemId < 0 || ammoCounts[i] <= 0) continue;
             ItemData item = ItemDatabase.GetItemData(itemId);
             if (item == null || item.itemType != ItemType.Ammo || item.ammoType != ammoType) continue;
 
-            int available = item.ammoAmount;
-            consumed += available;
+            int available = ammoCounts[i];
+            int take = Mathf.Min(available, needed - consumed);
+            consumed += take;
+            ammoCounts[i] -= take;
 
-            // 取最大穿透等级
-            if (item.penetrationLevel > bestPenLevel)
-                bestPenLevel = item.penetrationLevel;
+            // 记录每发子弹的穿透等级
+            for (int j = 0; j < take; j++)
+                consumedLevels.Add(item.penetrationLevel);
 
-            // 整格消耗：移除该槽位物品
-            slotIds[i] = -1;
+            // 弹药耗尽则清空槽位
+            if (ammoCounts[i] <= 0)
+                slotIds[i] = -1;
         }
         return consumed;
     }

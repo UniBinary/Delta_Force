@@ -13,19 +13,20 @@ MonoBehaviour:
   m_Name: W-M4A1
   m_EditorClassIdentifier: 
   itemName: M4A1
-  itemType: 4
+  itemType: 2
   icon: {fileID: 21300000, guid: 4b6f1bb2860641e46926af4b3b543656, type: 3}
   protectionLevel: 0
   weaponData:
     weaponName: "M4A1\u7A81\u51FB\u6B65\u67AA"
+    ammoType: 9mm
     maxMagazineAmmo: 30
-    totalReserveAmmo: 180
     penetrationLevel: 1
     fireRate: 0.1
     bulletForce: 20
     reloadTime: 1.5
-    bulletPrefab: {fileID: 0}
+    bulletPrefab: {fileID: 4877122617009473553, guid: 04ad9133b1720fb47ba424ff1a5b0c9e, type: 3}
     weaponModel: {fileID: 0}
+  ammoType: 9mm
   ammoAmount: 0
   penetrationLevel: 0
   healAmount: 0

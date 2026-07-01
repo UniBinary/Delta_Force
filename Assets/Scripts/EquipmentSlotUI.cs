@@ -110,12 +110,15 @@ public class EquipmentSlotUI :
             }
         }
 
-        // 治疗物显示耐久度
+        // 治疗物显示耐久度，弹药显示计数
         if (durabilityText != null)
         {
             bool isMedKit = item != null && item.itemType == ItemType.MedKit;
-            durabilityText.gameObject.SetActive(isMedKit);
+            bool isAmmo = item != null && item.itemType == ItemType.Ammo;
+            durabilityText.gameObject.SetActive(isMedKit || isAmmo);
             if (isMedKit)
+                durabilityText.text = dur.ToString();
+            else if (isAmmo)
                 durabilityText.text = dur.ToString();
         }
     }

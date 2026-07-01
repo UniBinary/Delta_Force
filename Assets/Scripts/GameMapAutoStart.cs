@@ -53,5 +53,26 @@ public class GameMapAutoStart : MonoBehaviour
             nm.StartClient();
             Debug.Log($"[GameMapAutoStart] Client 模式启动 — 连接 {NetworkConfig.ServerIP}:{NetworkConfig.Port}");
         }
+
+        // 强制客户端就绪（确保 [Command] 可以正常发送）
+        StartCoroutine(AutoReadyCoroutine());
+    }
+
+    System.Collections.IEnumerator AutoReadyCoroutine()
+    {
+        // 等待 NetworkClient 变为 active（主机模式下为同步，客户端模式下需等待连接）
+        yield return new WaitUntil(() => NetworkClient.active);
+        // 再等待一小段时间确保连接完成
+        yield return new WaitForSeconds(0.5f);
+        // 如果仍未就绪，强制就绪
+        if (!NetworkClient.ready)
+        {
+            NetworkClient.Ready();
+            Debug.Log("[GameMapAutoStart] 已强制调用 NetworkClient.Ready()");
+        }
+        else
+        {
+            Debug.Log("[GameMapAutoStart] NetworkClient 已就绪");
+        }
     }
 }
