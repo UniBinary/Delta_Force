@@ -20,17 +20,15 @@ public class MainMenuUI : MonoBehaviour
 {
     [SerializeField] Button _hostButton;
     [SerializeField] Button _clientButton;
-    [SerializeField] Button _joinButton;
     [SerializeField] InputField _ipInputField;
     [SerializeField] InputField _portInputField;
     bool _isHost = true;
 
     /// <summary>编辑器/MCP 调用，设置 UI 引用并绑定事件</summary>
-    public void SetReferences(Button host, Button client, Button join, InputField ip, InputField port)
+    public void SetReferences(Button host, Button client, InputField ip, InputField port)
     {
         _hostButton = host;
         _clientButton = client;
-        _joinButton = join;
         _ipInputField = ip;
         _portInputField = port;
     }
@@ -39,7 +37,6 @@ public class MainMenuUI : MonoBehaviour
     {
         if (_hostButton != null) _hostButton.onClick.AddListener(OnHostClicked);
         if (_clientButton != null) _clientButton.onClick.AddListener(OnClientClicked);
-        if (_joinButton != null) _joinButton.onClick.AddListener(OnJoinClicked);
         UpdateUI();
     }
 
@@ -84,21 +81,15 @@ public class MainMenuUI : MonoBehaviour
         SceneManager.LoadScene("GameMap");
     }
 
-    /// <summary>点击 Client → 仅切换选中状态</summary>
+    /// <summary>点击 Client → 读取 IP/Port → 进入 GameMap</summary>
     public void OnClientClicked()
     {
         _isHost = false;
-        UpdateUI();
-        Debug.Log("[MainMenuUI] Client 模式 — 请输入服务器 IP/端口后点击 Join");
-    }
-
-    /// <summary>点击 Join → 读取 IP/Port → 进入 GameMap</summary>
-    public void OnJoinClicked()
-    {
         NetworkConfig.IsHost = false;
         NetworkConfig.ServerIP = ParseIP(_ipInputField);
         NetworkConfig.Port = ParsePort(_portInputField);
-        Debug.Log($"[MainMenuUI] Client Join -> IP={NetworkConfig.ServerIP} Port={NetworkConfig.Port}");
+        UpdateUI();
+        Debug.Log($"[MainMenuUI] Client 模式 IP={NetworkConfig.ServerIP} Port={NetworkConfig.Port} → 进入 GameMap");
         SceneManager.LoadScene("GameMap");
     }
 }

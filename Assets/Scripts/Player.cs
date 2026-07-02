@@ -49,6 +49,12 @@ public class Player : NetworkBehaviour
     {
         base.OnStartClient();
 
+        // 只有本地玩家才启用自己的摄像机（含 AudioListener），
+        // 非本地玩家的摄像机必须禁用整个 GameObject，
+        // 否则 Host 端会错误地使用 Client 端玩家的摄像机，且多个 AudioListener 会冲突
+        if (cam != null)
+            cam.gameObject.SetActive(isLocalPlayer);
+
         // 从场景 Canvas 中全局查找 HealthBarFill（不在玩家子物体中）
         if (isLocalPlayer)
         {
@@ -91,6 +97,7 @@ public class Player : NetworkBehaviour
 
     void LateUpdate()
     {
+        if (!isLocalPlayer) return;
         if (cam != null)
             cam.transform.rotation = Quaternion.identity;
     }

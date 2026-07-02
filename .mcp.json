@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "unity-mcp": {
+      "command": "node",
+      "args": ["C:/Users/GQX/Documents/Cline/MCP/unity-mcp-server/src/index.js"],
+      "env": {
+        "UNITY_BRIDGE_PORT": "7890"
+      }
+    }
+  }
+}

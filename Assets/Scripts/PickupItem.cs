@@ -9,9 +9,15 @@ using UnityEngine;
 public class PickupItem : NetworkBehaviour
 {
     [Header("物品")]
+    [SyncVar(hook = nameof(OnItemIdChanged))]
     public int itemId = -1;        // 对应 ItemDatabase 中的索引
+
+    [SyncVar]
     public int ammoCount;          // 弹药实际数量（仅 Ammo 类型有效，>0 时覆盖 ItemData.ammoAmount）
+
+    [SyncVar]
     public int magazineAmmo;       // 武器弹匣剩余子弹（仅 Weapon 类型有效）
+
     public SpriteRenderer sr;
 
     void Awake()
@@ -23,6 +29,17 @@ public class PickupItem : NetworkBehaviour
         // 设为触发器避免物理阻挡玩家，Physics2D.OverlapCircleAll 仍能检测到
         Collider2D col = GetComponent<Collider2D>();
         if (col != null) col.isTrigger = true;
+    }
+
+    /// <summary>
+    /// 当 itemId 从服务端同步到客户端时，自动更新 Sprite
+    /// </summary>
+    void OnItemIdChanged(int oldId, int newId)
+    {
+        if (newId < 0) return;
+        ItemData item = ItemDatabase.GetItemData(newId);
+        if (item != null && item.icon != null && sr != null)
+            sr.sprite = item.icon;
     }
 
     /// <summary>
