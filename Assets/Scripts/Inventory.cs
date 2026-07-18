@@ -34,6 +34,9 @@ public class InventoryData
     // 弹药运行时计数（仅 Ammo 类型使用，初始为 item.ammoAmount，消耗后减少）
     public int[] chestRigAmmoCounts = new int[5];
     public int[] backpackAmmoCounts = new int[5];
+
+    // 护甲当前耐久度（-1=未初始化，卸甲时保存，重穿时恢复，避免耐久回满）
+    public int armorDurability = -1;
 }
 
 /// <summary>
@@ -612,7 +615,7 @@ public class Inventory : NetworkBehaviour
     }
 
     /// <summary>
-    /// 根据当前装备的护甲，更新 Player 上的 armorProtectionLevel
+    /// 根据当前装备的护甲，更新 Player 上的 armorProtectionLevel 和 armorDurability
     /// </summary>
     void RefreshArmorProtection()
     {
@@ -620,14 +623,42 @@ public class Inventory : NetworkBehaviour
         if (p == null) return;
 
         ItemData armor = GetItemData(_data.armorItemId);
-        if (armor != null && armor.itemType == ItemType.Armor && p.armorDurability > 0)
+        if (armor != null && armor.itemType == ItemType.Armor)
         {
+            // 护甲等级（非 SyncVar，所有客户端都需要设置）
             p.armorProtectionLevel = armor.protectionLevel;
+
+            // 护甲耐久（SyncVar，仅服务端修改）
+            if (isServer)
+            {
+                if (_data.armorDurability >= 0)
+                    p.armorDurability = _data.armorDurability; // 恢复保存的耐久
+                else
+                    p.armorDurability = armor.maxDurability > 0 ? armor.maxDurability : Player.MaxArmorDurability; // 首次装备
+            }
         }
         else
         {
             p.armorProtectionLevel = 0;
+            if (isServer)
+            {
+                // 卸甲前保存当前耐久（包括 0 = 已损坏），避免重穿时回满
+                _data.armorDurability = p.armorDurability;
+                p.armorDurability = 0;
+            }
         }
+
+        // 刷新本地 UI（RefreshArmorUI 内部有 isLocalPlayer 守卫）
+        p.RefreshArmorUI();
+    }
+
+    /// <summary>
+    /// 护甲受击后由 Player.TakeDamage 调用，将实际耐久同步回 InventoryData，
+    /// 确保卸甲→重穿时恢复的是实际耐久而非最大值。
+    /// </summary>
+    public void OnArmorDurabilityDamaged(int durability)
+    {
+        _data.armorDurability = durability;
     }
 
     #endregion

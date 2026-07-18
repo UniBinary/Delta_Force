@@ -152,11 +152,11 @@ public class Shooting : NetworkBehaviour
                     Debug.Log($"[Shooting] slot[{i}] AMMO INIT: _magazineAmmo[{i}]=0 (empty, need reload)");
                     // 通知服务端初始化弹药（空弹匣）
                     CmdInitWeaponAmmo(i, 0);
-                    // 立即更新本地 SyncVar
-                    if (i == _currentWeaponIndex)
+                    // 只在服务端直接设置 SyncVar（客户端等待服务端同步）
+                    if (isServer && i == _currentWeaponIndex)
                     {
                         _syncedMagazineAmmo = 0;
-                        Debug.Log($"[Shooting] slot[{i}] Local _syncedMagazineAmmo updated to 0");
+                        Debug.Log($"[Shooting] slot[{i}] Server SyncVar updated to 0");
                     }
                 }
                 else if (newWd == null)
@@ -274,16 +274,22 @@ public class Shooting : NetworkBehaviour
     }
 
     /// <summary>
-    /// 客户端通知服务端：某武器槽弹药已初始化（拾取武器后同步弹匣弹药到服务端）
+    /// 客户端通知服务端：某武器槽弹药已初始化（拾取武器后同步弹匣弹药到服务端）。
+    /// 注意：若服务端已通过 SetMagazineState 初始化（如捡枪时），不要覆盖。
     /// </summary>
     [Command]
     void CmdInitWeaponAmmo(int slot, int ammo)
     {
         if (slot >= 0 && slot < 2)
         {
-            _magazineAmmo[slot] = ammo;
-            _ammoInitialized[slot] = true;
-            _magazineBulletLevels[slot].Clear();
+            // 若服务端已初始化（例如捡枪时 SetMagazineState 已设置正确弹量），
+            // 则不要用客户端传过来的 0 覆盖掉正确的弹匣数据。
+            if (!_ammoInitialized[slot])
+            {
+                _magazineAmmo[slot] = ammo;
+                _ammoInitialized[slot] = true;
+                _magazineBulletLevels[slot].Clear();
+            }
             if (slot == _currentWeaponIndex)
                 SyncAmmoToClient();
         }

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 914b2c88b55fd3444b0d4f62ddd68ba0, type: 3}
+  m_Name: Armor_L1
+  m_EditorClassIdentifier: 
+  itemName: "\u62A4\u7532 L1"
+  itemType: 1
+  icon: {fileID: 21300000, guid: 73d552733aeddbe45bbdaa95da38ea1c, type: 3}
+  protectionLevel: 1
+  weaponData:
+    weaponName: "\u624B\u67AA"
+    ammoType: 9mm
+    maxMagazineAmmo: 30
+    penetrationLevel: 1
+    fireRate: 0.1
+    bulletForce: 20
+    reloadTime: 1.5
+    bulletPrefab: {fileID: 0}
+    weaponModel: {fileID: 0}
+  ammoType: 9mm
+  ammoAmount: 0
+  penetrationLevel: 0
+  healAmount: 0
+  maxDurability: 100

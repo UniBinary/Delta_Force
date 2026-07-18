@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls c:/Users/GQX/AppData/Local/ClaudeCode/mcp/ 2>/dev/null || echo \"No MCP dir\")",
+      "Read(//c/Users/GQX/AppData/Local/ClaudeCode/**)",
+      "mcp__unity-mcp__unity_scene_hierarchy",
+      "mcp__unity-mcp__unity_execute_code",
+      "mcp__unity-mcp__unity_scene_save",
+      "mcp__unity-mcp__unity_scene_open",
+      "mcp__unity-mcp__unity_component_add",
+      "mcp__unity-mcp__unity_get_compilation_errors",
+      "mcp__unity-mcp__unity_script_read",
+      "mcp__unity-mcp__unity_asset_list",
+      "mcp__unity-mcp__unity_execute_menu_item",
+      "mcp__unity-mcp__unity_gameobject_create",
+      "mcp__unity-mcp__unity_search_by_name",
+      "mcp__unity-mcp__unity_project_info"
+    ]
+  }
+}

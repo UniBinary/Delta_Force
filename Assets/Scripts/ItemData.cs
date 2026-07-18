@@ -35,7 +35,7 @@ public class ItemData : ScriptableObject
     public int ammoAmount;          // 补充弹药量
     public int penetrationLevel;    // 子弹穿透等级 (1-6)，使用此弹药后覆盖武器默认穿透
 
-    [Header("治疗属性（仅 MedKit 类型填）")]
-    public int healAmount;          // 每点耐久恢复的血量
-    public int maxDurability;       // 治疗物最大耐久（使用次数），消耗完即消失
+    [Header("耐久/治疗属性")]
+    public int healAmount;          // 每点耐久恢复的血量（MedKit 用）
+    public int maxDurability;       // 最大耐久：MedKit=使用次数，Armor/Helmet=护甲耐久（0 则用默认值 100）
 }

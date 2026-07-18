@@ -45,8 +45,15 @@ public class Bullet : NetworkBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         Debug.Log($"[Bullet] OnTriggerEnter2D → {other.name} (isServer={isServer})");
-        
+
         if (!isServer) return;
+
+        // 地面物品不阻挡子弹
+        if (other.GetComponentInParent<PickupItem>() != null)
+        {
+            Debug.Log($"[Bullet] 碰到物品 {other.name}，穿透");
+            return;
+        }
 
         Player player = other.GetComponentInParent<Player>();
         if (player != null)
@@ -56,7 +63,7 @@ public class Bullet : NetworkBehaviour
         }
         else
         {
-            Debug.Log($"[Bullet] 碰到 {other.name}，无 Player 组件");
+            Debug.Log($"[Bullet] 碰到障碍物 {other.name}，销毁");
         }
 
         NetworkServer.Destroy(gameObject);

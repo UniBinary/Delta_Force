@@ -8,7 +8,9 @@ public class SceneLoader : MonoBehaviour
     public enum Scene
     {
         MainMenu,
-        GameMap
+        GameMap,
+        EvcFailed,
+        EvcSucceeded
     }
 
     public static void Load(Scene scene)
